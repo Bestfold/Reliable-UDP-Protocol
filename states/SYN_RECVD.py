@@ -44,9 +44,9 @@ class SynRecvdState(State):
 				ack_packet, recieved_address = self.parent.net_socket.recvfrom(1024)
 
 				# Check for the right packet
-				if self.check_ack_packet(ack_packet, recieved_address, self.parent.counterpart_address):
+				if self.check_ack_packet(ack_packet, recieved_address):
 					print("ACK packet received. Handshake complete.")
-					return self.parent.EstablishedState
+					return self.parent.establishedState
 				
 				else:
 					continue
@@ -68,12 +68,12 @@ class SynRecvdState(State):
 		
 
 
-	def check_ack_packet(ack_packet, recieved_address, client_address) -> bool:
+	def check_ack_packet(self, ack_packet, recieved_address) -> bool:
 		'''
 			Local function to check if packet is correct ACK-packet
 		'''
 		# If not from the right address
-		if recieved_address != client_address:
+		if recieved_address != self.parent.counterpart_address:
 			return False
 			
 		data, seq_num, ack_num, flags, window_size = dismantle_packet(ack_packet)

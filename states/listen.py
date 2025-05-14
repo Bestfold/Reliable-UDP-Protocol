@@ -3,11 +3,18 @@ from drtpPacket import *
 from .state import State
 
 class ListenState(State):
+	'''
+		Serverside
+		Listening for incomming requests to communicate (SYN packets)
+	'''
 	def enter(self):
 		super().enter()
 
 		# For readability:
 		args = self.parent.args
+
+		# Set the effective window size. Useful for client and server function
+		self.parent.effective_window_size = args.window
 
 		# Resets counterpart_address when listening for new connection.
 		self.parent.counterpart_address = None
@@ -23,21 +30,17 @@ class ListenState(State):
 		pass
 
 	def process(self):
-		net_socket = self.parent.net_socket
-
 		# Recieve potential SYN-packet from socket
-		syn_packet, client_address = net_socket.recvfrom(1024)
+		syn_packet, client_address = self.parent.net_socket.recvfrom(1024)
 		print("Packet recieved from: ", client_address)
 
 		# Unpack the header from the message
 		data, seq_num, ack_num, flags, window_size = dismantle_packet(syn_packet)
 		print(f"Seq_num: {seq_num}, Ack_num: {ack_num}, falgs: {flags}, Window size: {window_size}")
-
-		#TODO check for SYN
 		
 		# Chech that SYN packet is correct
 		if flags == 8 and len(data) == 0:
-			print("SYN packet received. Sending SYN-ACK packet.")
+			print("SYN packet received.")
 
 			# Sets the counterpart_address only if it is correct SYN packet
 			self.parent.counterpart_address = client_address

@@ -30,6 +30,9 @@ class StateMachine:
 		# Holds the recieved address of the connection upon handshake
 		self.counterpart_address = None
 
+		# Holds size of window. Calculated for client
+		self.effective_window_size = None
+
 		# The current state of the State Machine
 		self.current_state = None
 

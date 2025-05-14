@@ -23,9 +23,9 @@ class SynSentState(State):
 		
 		# Creating SYN packet
 		syn_packet = create_packet(b'', 0, 0, 8, args.window)
-
+		
 		# Sending SYN packet
-		self.parent.net_socket.send(syn_packet, (args.ip, args.port))
+		self.parent.net_socket.sendto(syn_packet, (args.ip, args.port))
 		print("SYN-packet sent to", (args.ip, args.port))
 
 		# Updating counterpart_address as the server address
@@ -51,10 +51,15 @@ class SynSentState(State):
 		while True:
 			try:
 				# Receiving SYN-ACK packet from server
-				syn_ack_packet, recieved_address = self.parent.net_socket.recv(1024)
-
-				if self.check_syn_ack_packet(syn_ack_packet, recieved_address, self.parent.counterpart_address):
+				print("Waiting for SYN_ACK")
+				syn_ack_packet, recieved_address = self.parent.net_socket.recvfrom(1024)
+				print("Recieved packet:", syn_ack_packet)
+				valid_ack, window_size = self.check_syn_ack_packet(syn_ack_packet, recieved_address)
+				if valid_ack:
 					print("SYN_ACK packet recieved.")
+
+					# Set overall window size to minimum of recieved and argument provided size
+					self.parent.effective_window_size = min(window_size, args.window)
 					return self.parent.establishedState
 
 				else:
@@ -77,22 +82,22 @@ class SynSentState(State):
 			
 
 			
-	def check_syn_ack_packet(syn_ack_packet, recieved_address, server_address):
+	def check_syn_ack_packet(self, syn_ack_packet, recieved_address):
 		'''
 			Local function to check if packet is correct SYN_ACK-packet
 		'''
 
 		# If not from the right address
-		if recieved_address != server_address:
-			return False
+		if recieved_address != self.parent.counterpart_address:
+			return (False, None)
 		
 		data, seq_num, ack_num, flags, window_size = dismantle_packet(syn_ack_packet)
 		print(f"seq_num: {seq_num}, ack_num: {ack_num}, falgs: {flags}, Window size: {window_size}")
 
 		# Ignores other packets than SYN ACK
 		if flags == 12 and len(data) == 0:
-			return True
+			return (True, window_size)
 		else:
 			print("Invalid ACK packet received")
-			return False	
+			return (False, None)
 		
