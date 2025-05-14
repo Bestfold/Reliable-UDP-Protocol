@@ -3,7 +3,8 @@ from server import *;
 from client import *;
 from socket import *;
 from collections import deque;
-from stateMachine import StateMachine, states
+from statemachine import StateMachine
+from states import *
 
 def main():
 	'''

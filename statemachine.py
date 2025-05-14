@@ -1,4 +1,4 @@
-from .states import *;
+from states import *;
 
 class StateMachine:
 
