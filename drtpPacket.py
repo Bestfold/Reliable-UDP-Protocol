@@ -45,6 +45,26 @@ def get_seq_num(packet):
 	_data, seq_num, _ack_num, _flags, _window_size = dismantle_packet(packet)
 	return seq_num
 
+
+def get_ack_num(packet):
+	'''
+		Dismatles packet and returns only Acknowledge number
+
+		Arguments: drtp packet
+	'''
+	_data, _seq_num, ack_num, _flags, _window_size = dismantle_packet(packet)
+	return ack_num
+
+
+def get_window(packet):
+	'''
+		Dismatles packet and returns only size of window in packet
+
+		Arguments: drtp packet
+	'''
+	_data, _seq_num, _ack_num, _flags, window_size = dismantle_packet(packet)
+	return window_size
+
 # Function sourced from https://github.com/safiqul/2410/blob/main/header/header.py
 def parse_header(header):
 	'''

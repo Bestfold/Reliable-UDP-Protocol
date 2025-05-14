@@ -35,6 +35,9 @@ class StateMachine:
 
 		# The current state of the State Machine
 		self.current_state = None
+		
+		# Variable to keep file to send for client, and accumulate data to for server
+		self.file = b''
 
 		# Instantiating every state and passing parent refrence to them
 		self.closedState = ClosedState("ClosedState", self)

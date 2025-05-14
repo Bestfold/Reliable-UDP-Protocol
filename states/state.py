@@ -7,7 +7,8 @@ class State:
 		self.parent = parent
 	
 	def enter(self):
-		print("State entered:", self.name)
+		#print("State entered:", self.name)
+		pass
 
 	def exit(self):
 		pass

@@ -15,6 +15,12 @@ class SynSentState(State):
 		# Readability
 		args = self.parent.args
 
+		# Reads file which file_path is stored within args in State Machine
+		# And saves data in the file variable of State Machine
+		if not self.read_file():
+			return self.parent.closedState
+
+
 		# Setting socket to be IPv4, UDP
 		self.parent.net_socket = socket(AF_INET, SOCK_DGRAM)
 
@@ -26,7 +32,7 @@ class SynSentState(State):
 		
 		# Sending SYN packet
 		self.parent.net_socket.sendto(syn_packet, (args.ip, args.port))
-		print("SYN-packet sent to", (args.ip, args.port))
+		print("\nSYN packet is sent")
 
 		# Updating counterpart_address as the server address
 		self.parent.counterpart_address = (args.ip, args.port)
@@ -51,12 +57,12 @@ class SynSentState(State):
 		while True:
 			try:
 				# Receiving SYN-ACK packet from server
-				print("Waiting for SYN_ACK")
 				syn_ack_packet, recieved_address = self.parent.net_socket.recvfrom(1024)
-				print("Recieved packet:", syn_ack_packet)
-				valid_ack, window_size = self.check_syn_ack_packet(syn_ack_packet, recieved_address)
-				if valid_ack:
-					print("SYN_ACK packet recieved.")
+				
+				if self.check_syn_ack_packet(syn_ack_packet, recieved_address):
+					print("SYN_ACK packet is recieved")
+
+					window_size = get_window(syn_ack_packet)
 
 					# Set overall window size to minimum of recieved and argument provided size
 					self.parent.effective_window_size = min(window_size, args.window)
@@ -85,19 +91,49 @@ class SynSentState(State):
 	def check_syn_ack_packet(self, syn_ack_packet, recieved_address):
 		'''
 			Local function to check if packet is correct SYN_ACK-packet
+			Checks for:
+			- correct address, 
+			- flags
+			- data size (should be 0)
+
+			Arguments: 
+			syn_ack_packet -> packet to check
+			recieved_address -> address of recieved packet to check
 		'''
 
 		# If not from the right address
 		if recieved_address != self.parent.counterpart_address:
-			return (False, None)
+			return False
 		
-		data, seq_num, ack_num, flags, window_size = dismantle_packet(syn_ack_packet)
-		print(f"seq_num: {seq_num}, ack_num: {ack_num}, falgs: {flags}, Window size: {window_size}")
+		data, _seq_num, _ack_num, flags, _window_size = dismantle_packet(syn_ack_packet)
 
 		# Ignores other packets than SYN ACK
 		if flags == 12 and len(data) == 0:
-			return (True, window_size)
+			return True
 		else:
 			print("Invalid ACK packet received")
-			return (False, None)
+			return False
+		
+
+	def read_file(self):
+		'''
+			Function to read a file and check if it can read the file.
+			When read correctly, it saves the data to file variable of State Machine
+		'''
+		try:
+			# Filepath
+			file_path = self.parent.args.file
+
+			with open(file_path, 'rb') as found_file:
+				data = found_file.read()
+				self.parent.file = data
+				return True
+			
+		except FileNotFoundError:
+			print(f"File not found: {file_path}")
+			return False
+
+		except Exception as e:
+			print(f"Error reading file: {e}")
+			return False
 		

@@ -17,7 +17,7 @@ class SynRecvdState(State):
 		# Send SYN-ACK packet to client
 		syn_ack_packet = create_packet(b'', 0, 0, 12, self.parent.args.window)
 		self.parent.net_socket.sendto(syn_ack_packet, client_address)
-		print(f"Sent SYN-ACK packet to {client_address}")
+		print("SYN-ACK packet is sent")
 
 
 	def exit(self):
@@ -45,7 +45,7 @@ class SynRecvdState(State):
 
 				# Check for the right packet
 				if self.check_ack_packet(ack_packet, recieved_address):
-					print("ACK packet received. Handshake complete.")
+					print("ACK packet received. \nConnection Established\n")
 					return self.parent.establishedState
 				
 				else:
@@ -71,13 +71,20 @@ class SynRecvdState(State):
 	def check_ack_packet(self, ack_packet, recieved_address) -> bool:
 		'''
 			Local function to check if packet is correct ACK-packet
+			Checks for:
+			- correct address, 
+			- flags
+			- data size (should be 0)
+
+			Arguments: 
+			ack_packet -> packet to check
+			recieved_address -> address of recieved packet to check
 		'''
 		# If not from the right address
 		if recieved_address != self.parent.counterpart_address:
 			return False
 			
-		data, seq_num, ack_num, flags, window_size = dismantle_packet(ack_packet)
-		print(f"seq_num: {seq_num}, ack_num: {ack_num}, falgs: {flags}, Window size: {window_size}")
+		data, _seq_num, _ack_num, flags, _window_size = dismantle_packet(ack_packet)
 			
 		# Check for invalid ACK packet
 		if flags == 4 and len(data) == 0:
