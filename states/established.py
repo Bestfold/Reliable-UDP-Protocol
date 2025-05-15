@@ -57,6 +57,11 @@ class EstablishedState(State):
 			Exception handling:
 				- TimeoutError when waiting for data packets from client after SERVER_TIMEOUT
 				- Other exception when recieving data packets from server.
+
+			Testing:
+				Discards packet with sequence number equal to args.discard
+				set as argument.
+				(helper function)
 		'''
 		print("Recieving data:\n")
 		# Keeps a record of what sequence number has been recieved
@@ -154,7 +159,7 @@ class EstablishedState(State):
 					sliding_window.popleft()
 
 			except TimeoutError:
-				print("RTO occured")
+				print(f"{datetime.now()} -- RTO occured")
 				
 				# If no ack is recieved, assume last ACK of handshake got lost and resend
 				if no_ack_recieved:
@@ -211,6 +216,7 @@ class EstablishedState(State):
 			- duplicate
 			- out-of-order
 			- flags (should be 0)
+			- discards packet with seq == discard argument
 
 			Arguments: 
 			data_packet -> packet to check
@@ -223,6 +229,12 @@ class EstablishedState(State):
 			return False
 		
 		_data, seq_num, _ack_num, flags, _window_size = dismantle_packet(data_packet)
+
+		# Discarding for testing purposes
+		if seq_num == self.parent.args.discard:
+			# Set to a high number
+			self.parent.args.discard = 1_000_000
+			return False
 
 		if seq_num != (sequence_order + 1):
 			print(f"{datetime.now()} -- out-of-order packet {seq_num} is recieved")

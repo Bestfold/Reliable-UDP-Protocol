@@ -24,8 +24,8 @@ def get_args():
 		parser.add_argument('-w', '--window', type=int, default=3, 
 				help='Sliding window size (default: 3) Ignored on server')
 		
-		parser.add_argument('-d', '--discard', type=int, default=100000, 
-				help='Discard packet nr. provided. For testing purposes (defgault: 100000) Ignored on client')
+		parser.add_argument('-d', '--discard', type=int, default=1_000_000, 
+				help='Discard packet nr. provided. For testing purposes (defgault: 1000000) Ignored on client')
 		
 		
 		args = parser.parse_args()
