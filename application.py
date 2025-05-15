@@ -13,27 +13,15 @@ def main():
 	# Parse cli arguments and error check them
 	args = get_args()
 
+	# Empty socket to fill out within States
 	net_socket: socket = None
 
+	# Handling all states
 	state_machine = StateMachine(args, net_socket)
 
 	while(True):
 		state_machine.process_state()
 
-	'''
-	if args.server:
-		print('Setting up server')
-		# Start server
-		server(args)
-	elif args.client:
-		print('Setting up client')
-		# Start client
-		client(args)
-	else:
-		print('Error: Neither server nor client mode selected.')
-		sys.exit(1)
-	'''
-	
 
 if __name__ == '__main__':
 	main()

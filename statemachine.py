@@ -45,7 +45,7 @@ class StateMachine:
 		self.synRecvdState = SynRecvdState("SynRecvdState", self)
 		self.synSentState = SynSentState("SynSentState", self)
 		self.establishedState = EstablishedState("EstablishedState", self)
-		self.closeWaitState = CloseWaitState("CloseWaitState", self)
+		self.finWaitState = FinWaitState("FinWaitState", self)
 		self.lastAckState = LastAckState("LastAckState", self)
 
 		# Initial state = ClosedState

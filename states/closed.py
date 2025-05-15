@@ -13,7 +13,7 @@ class ClosedState(State):
 
 		# If returned here "from service", shut down
 		if not self.first_run:
-			print("Closing down...")
+			print("\nConnection closes...")
 			if self.parent.net_socket:
 				self.parent.net_socket.close()
 			sys.exit(1)

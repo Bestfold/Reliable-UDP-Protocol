@@ -15,12 +15,6 @@ class SynSentState(State):
 		# Readability
 		args = self.parent.args
 
-		# Reads file which file_path is stored within args in State Machine
-		# And saves data in the file variable of State Machine
-		if not self.read_file():
-			return self.parent.closedState
-
-
 		# Setting socket to be IPv4, UDP
 		self.parent.net_socket = socket(AF_INET, SOCK_DGRAM)
 
@@ -46,7 +40,16 @@ class SynSentState(State):
 	def process(self):
 		'''
 			Await SYN_ACK packet.
+
+			Read data to self.parent.file
 		'''
+
+		# Reads self.parent.args.file
+		# And saves data to self.parent.file
+		# Handles exceptions
+		if not self.read_file():
+			return self.parent.closedState
+		
 		# Readability
 		args = self.parent.args
 

@@ -9,6 +9,21 @@ SERVER_TIMEOUT = 10 # 10s for server waiting for data
 MAX_ATTEMPTS = 5
 
 class EstablishedState(State):
+	'''
+		Data transfer (client) and data reception (server)
+
+		Using sliding window for flow control
+
+		Handles:
+		- wrong address
+
+		- invalid data packet
+		- out-of-order data packet
+		- duplicate data packet
+
+		- invalid ACK packet
+		- out-of-order ACK packet
+	'''
 	def enter(self):
 		super().enter()
 
@@ -17,15 +32,6 @@ class EstablishedState(State):
 			self.send_ack()
 			# CLIENT_TIMEOUT for client
 			self.parent.net_socket.settimeout(CLIENT_TIMEOUT)
-
-			# Local variable to EstablishedState instance
-			self.seq_num_order: int
-
-			# Local variable for keeping account of start of data for packet
-			self.startByte: int
-
-			# Local variable for keeping account of end of data for packet
-			self.endByte: int
 
 		elif self.parent.args.server:
 			# SERVER_TIMEOUT for client
@@ -62,7 +68,7 @@ class EstablishedState(State):
 
 				# Check if FIN packet
 				if self.check_fin_packet(packet, recieved_address):
-					print(f"FIN packet is recieved")
+					print(f"\n\nFIN packet is recieved")
 					return self.parent.lastAckState
 
 
@@ -88,8 +94,91 @@ class EstablishedState(State):
 			except Exception as e:
 				print(f"Failed to recieve data packet from client. Exception: {e}")
 				return self.parent.closedState 
+
+
+	def client(self):
+		'''
+			Transfer file data reliably. File is sent with drtp packets with a max size of 1000 
+			bytes, 8 of which is the drtp header. The file data is then sent 992 bytes at a time.
+
+			Sends a new data packet whenever space in window and adds it to the window.
+			When packet gets acked, it gets removed from the window, freeing up space
+			for a new packet.
+
+			If RTO waiting for ACK for a packet, resending ALL packets in window.
+
+		'''
+		# Byte pointer to where last data ended
+		self.startByte = 0
+		# Byte pointer to what current packet should contain
+		self.endByte = min(MAX_DATA, len(self.parent.file))
+
+		# Keeps order of sequence numbers that are sent
+		self.seq_num_order = 0
+
+		# Max size of sliding window. Calculated in handshake
+		window_size = self.parent.effective_window_size
+
+		# Sliding window. Using deque to allow for easy pop and append of packets
+		sliding_window = deque((), window_size)
+		
+		attempts = 0
+
+		# Is no ack recieved from server yet?
+		no_ack_recieved = True
+
+		print("Data transfer:\n")
+
+		while(True):
+			#print("File length: ", len(self.parent.file)) TODO
+			#print("endByte: ", self.endByte) TODO
+			# Creates and sends packets in correct order if available space in sliding window
+			self.send_available_packets(sliding_window)
+			#print("seq_num_order: ", self.seq_num_order) TODO
+			
+			# No more data to send and all sent packets acked
+			if len(self.parent.file) < self.endByte and len(sliding_window) == 0:
+				return self.parent.finWaitState
+			
+			# Recieving ACKs
+			try:
+				ack_packet, recieved_address = self.parent.net_socket.recvfrom(1024)
+
+				# Check if valid ACK
+				if self.check_ack_packet(ack_packet, recieved_address, sliding_window):
+					no_ack_recieved = False
+
+					print(f"{datetime.now()} -- ACK for packet = {get_seq_num(ack_packet)} is recieved")
+
+					# First packet in sliding window now acked, so removing it
+					sliding_window.popleft()
+
+			except TimeoutError:
+				print("RTO occured")
+				
+				# If no ack is recieved, assume last ACK of handshake got lost and resend
+				if no_ack_recieved:
+					self.send_ack()
+
+				# Resends all packets in sliding window because of RTO
+				self.resend_sliding_window(sliding_window)
 			
 	
+
+
+
+
+
+
+	# Helper functions:
+
+
+
+
+
+
+
+
 	def check_fin_packet(self, data_packet, recieved_address):
 		'''
 			Local function to check if packet is correct FIN-packet
@@ -150,73 +239,6 @@ class EstablishedState(State):
 			print("Invalid data packet received")
 			return False
 
-
-	def client(self):
-		'''
-			Transfer file data reliably. File is sent with drtp packets with a max size of 1000 
-			bytes, 8 of which is the drtp header. The file data is then sent 992 bytes at a time.
-
-			Sends a new data packet whenever space in window and adds it to the window.
-			When packet gets acked, it gets removed from the window, freeing up space
-			for a new packet.
-
-			If RTO waiting for ACK for a packet, resending ALL packets in window.
-
-		'''
-		# Byte pointer to where last data ended
-		self.startByte = 0
-		# Byte pointer to what current packet should contain
-		self.endByte = min(MAX_DATA, len(self.parent.file))
-
-		# Keeps order of sequence numbers that are sent
-		self.seq_num_order = 0
-
-		# Max size of sliding window. Calculated in handshake
-		window_size = self.parent.effective_window_size
-
-		# Sliding window. Using deque to allow for easy pop and append of packets
-		sliding_window = deque((), window_size)
-		
-		attempts = 0
-
-		# Is no ack recieved from server yet?
-		no_ack_recieved = True
-
-		print("Data transfer:\n")
-
-		while(True):
-			#print("File length: ", len(self.parent.file)) TODO
-			#print("endByte: ", self.endByte) TODO
-			# Creates and sends packets in correct order if available space in sliding window
-			self.send_available_packets(sliding_window)
-			#print("seq_num_order: ", self.seq_num_order) TODO
-
-			if len(self.parent.file) < self.endByte and len(sliding_window) == 0:
-				return self.parent.closedState
-			
-			# Recieving ACKs
-			try:
-				ack_packet, recieved_address = self.parent.net_socket.recvfrom(1024)
-
-				# Check if valid ACK
-				if self.check_ack_packet(ack_packet, recieved_address, sliding_window):
-					no_ack_recieved = False
-
-					print(f"{datetime.now()} -- ACK for packet = {get_seq_num(ack_packet)} is recieved")
-
-					# First packet in sliding window now acked, so removing it
-					sliding_window.popleft()
-
-			except TimeoutError:
-				print("RTO occured")
-				
-				# If no ack is recieved, assume last ACK of handshake got lost and resend
-				if no_ack_recieved:
-					self.send_ack()
-
-				# Resends all packets in sliding window because of RTO
-				self.resend_sliding_window(sliding_window)
-	
 
 	def send_available_packets(self, sliding_window):
 		# Sending packets when space in window and still more data not sent in packets.
@@ -310,25 +332,3 @@ class EstablishedState(State):
 
 			self.parent.net_socket.sendto(ack_packet, self.parent.counterpart_address)
 			print(f"ACK packet is sent\nConnection Establishing\n")
-
-
-
-
-
-
-
-
-	
-	def save_file(file_data):
-		'''
-			Takes byte data of file and writes to filestructure
-
-			Arguments: variable containing bytes of file
-		'''
-		try:
-			with open('recieved_data.jpg', 'wb') as new_file:
-				new_file.write(file_data)
-
-		except Exception as e:
-			print(f"Error reading file: {e}")
-			sys.exit(1)

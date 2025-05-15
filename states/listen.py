@@ -24,7 +24,6 @@ class ListenState(State):
 		
 		# Bind the socket to the server IP and port
 		self.parent.net_socket.bind((args.ip, args.port))
-		print(f"Ready to serve on {args.ip}:{args.port}\n")
 
 	def exit(self):
 		pass
@@ -38,7 +37,7 @@ class ListenState(State):
 		
 		# Chech that SYN packet is correct
 		if flags == 8 and len(data) == 0:
-			print("SYN packet is received")
+			print("\nSYN packet is received")
 
 			# Sets the counterpart_address only if it is correct SYN packet
 			self.parent.counterpart_address = client_address
