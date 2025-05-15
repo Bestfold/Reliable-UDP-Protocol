@@ -111,7 +111,7 @@ class EstablishedState(State):
 				# Check for correct data packet
 				if self.check_data_packet(packet, recieved_address, sequence_order):
 					seq_num = get_seq_num(packet)
-					print(f"{datetime.now()} -- packet {seq_num} is received")
+					print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- packet {seq_num} is received")
 
 					# Add data to self.parent.file which will be written at end of connection
 					self.parent.file += get_data(packet)
@@ -125,7 +125,7 @@ class EstablishedState(State):
 
 					self.parent.net_socket.sendto(ack_packet, self.parent.counterpart_address)
 
-					print(f"{datetime.now()} -- sending ack for the recieved {seq_num}")
+					print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- sending ack for the recieved {seq_num}")
 				
 				continue
 
@@ -190,13 +190,13 @@ class EstablishedState(State):
 				if self.check_ack_packet(ack_packet, recieved_address, sliding_window):
 					no_ack_recieved = False
 
-					print(f"{datetime.now()} -- ACK for packet = {get_seq_num(ack_packet)} is recieved")
+					print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- ACK for packet = {get_seq_num(ack_packet)} is recieved")
 
 					# First packet in sliding window now acked, so removing it
 					sliding_window.popleft()
 
 			except TimeoutError:
-				print(f"{datetime.now()} -- RTO occured")
+				print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- RTO occured")
 				
 				# If no ack is recieved, assume last ACK of handshake got lost and resend
 				if no_ack_recieved:
@@ -274,11 +274,11 @@ class EstablishedState(State):
 			return False
 
 		if seq_num != (sequence_order + 1):
-			print(f"{datetime.now()} -- out-of-order packet {seq_num} is recieved")
+			print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- out-of-order packet {seq_num} is recieved")
 			return False
 
 		if seq_num == sequence_order:
-			print(f"{datetime.now()} -- duplicate packet {seq_num} is recieved")
+			print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- duplicate packet {seq_num} is recieved")
 			return False
 
 		# Has correct flag of a data packet
@@ -309,7 +309,7 @@ class EstablishedState(State):
 			self.startByte = self.endByte
 			self.endByte += MAX_DATA # MAX_DATA from drtpPacket = 992 (bytes)
 
-			print(f"{datetime.now()} -- packet with seq = {self.seq_num_order} is sent, sliding window = {self.seq_nums_in_window(sliding_window)}")
+			print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- packet with seq = {self.seq_num_order} is sent, sliding window = {self.seq_nums_in_window(sliding_window)}")
 
 
 	def seq_nums_in_window(self, sliding_window) -> str:
@@ -369,7 +369,7 @@ class EstablishedState(State):
 		'''
 		for packet in sliding_window:
 			self.parent.net_socket.sendto(packet, self.parent.counterpart_address)
-			print(f"{datetime.now()} -- retransmitting packet with seq = {get_seq_num(packet)}")
+			print(f"{datetime.now().strftime("%H:%M:%S.%f")} -- retransmitting packet with seq = {get_seq_num(packet)}")
 
 
 	def send_ack(self):
