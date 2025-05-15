@@ -4,6 +4,7 @@ from .state import State
 
 TIMEOUT = 0.4 # 400ms
 MAX_ATTEMPTS = 5
+SERVER_WINDOW = 15 # Size of server window. Set to 15
 
 class SynRecvdState(State):
 	'''
@@ -19,7 +20,7 @@ class SynRecvdState(State):
 		self.parent.net_socket.settimeout(TIMEOUT)
 
 		# Send SYN-ACK packet to client
-		syn_ack_packet = create_packet(b'', 0, 0, 12, self.parent.args.window)
+		syn_ack_packet = create_packet(b'', 0, 0, 12, SERVER_WINDOW)
 		self.parent.net_socket.sendto(syn_ack_packet, client_address)
 		print("SYN-ACK packet is sent")
 

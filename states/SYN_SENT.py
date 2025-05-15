@@ -69,10 +69,10 @@ class SynSentState(State):
 				if self.check_syn_ack_packet(syn_ack_packet, recieved_address):
 					print("SYN_ACK packet is recieved")
 
-					window_size = get_window(syn_ack_packet)
+					server_window_size = get_window(syn_ack_packet)
 
 					# Set overall window size to minimum of recieved and argument provided size
-					self.parent.effective_window_size = min(window_size, args.window)
+					self.parent.effective_window_size = min(server_window_size, args.window)
 					return self.parent.establishedState
 
 				else:

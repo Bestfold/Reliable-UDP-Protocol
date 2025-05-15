@@ -27,7 +27,7 @@ class FinWaitState(State):
 		# Setting timeout for recieving FIN-ACK
 		self.parent.net_socket.settimeout(TIMEOUT)
 
-		fin_packet = create_packet(b'', 0, 0, 2, self.parent.args.window)
+		fin_packet = create_packet(b'', 0, 0, 2, 0)
 		self.parent.net_socket.sendto(fin_packet, self.parent.counterpart_address)
 		print("FIN packet is sent")
 

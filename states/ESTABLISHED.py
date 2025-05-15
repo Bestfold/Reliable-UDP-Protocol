@@ -36,9 +36,6 @@ class EstablishedState(State):
 			self.parent.net_socket.settimeout(CLIENT_TIMEOUT)
 
 		elif self.parent.args.server:
-			# Start time of data transfer
-			self.start_time = datetime.now()
-
 			# Coutns amount of bytes recieved
 			self.total_bytes_recieved = 0
 
@@ -52,14 +49,16 @@ class EstablishedState(State):
 
 		# Calculate throughput for data recieved by server
 		if self.parent.args.server:
-			# End time of data transfer
-			self.end_time = datetime.now()
 
 			# Duration of data reception in microseconds
-			duration = ((self.end_time - self.start_time).microseconds)
+			duration = (self.end_time.microsecond - self.start_time.microsecond)
+			
+			print("Duration: ", duration)
 
 			# Total amount of bits recieved over transfer
 			bits_recieved = self.total_bytes_recieved * 8
+
+			print("Bits recieved: ", bits_recieved)
 
 			# bits (Mb * 10^-6) divided by microseconds (s * 10^-6) == Mb / s = Mbps
 			# Printed in LastAckState
@@ -89,6 +88,10 @@ class EstablishedState(State):
 				(helper function)
 		'''
 		print("Recieving data:\n")
+
+		# Start time of data transfer
+		self.start_time = datetime.now()
+
 		# Keeps a record of what sequence number has been recieved
 		sequence_order = 0
 		
@@ -99,6 +102,10 @@ class EstablishedState(State):
 				# Check if FIN packet
 				if self.check_fin_packet(packet, recieved_address):
 					print(f"\n\nFIN packet is recieved")
+
+					# End time of data transfer
+					self.end_time = datetime.now()
+
 					return self.parent.lastAckState
 
 
@@ -293,7 +300,7 @@ class EstablishedState(State):
 			# Calculates sequence number dynamically
 			self.seq_num_order += 1
 
-			data_packet = create_packet(packet_data, self.seq_num_order, 0, 0, self.parent.args.window)
+			data_packet = create_packet(packet_data, self.seq_num_order, 0, 0, self.parent.effective_window_size)
 
 			self.parent.net_socket.sendto(data_packet, self.parent.counterpart_address)
 
@@ -371,7 +378,7 @@ class EstablishedState(State):
 				Sends ACK as the final part of the initial handshake
 			'''
 			# Sending ACK packet to server
-			ack_packet = create_packet(b'', 0, 0, 4, self.parent.args.window)
+			ack_packet = create_packet(b'', 0, 0, 4, self.parent.effective_window_size)
 
 			self.parent.net_socket.sendto(ack_packet, self.parent.counterpart_address)
 			print(f"ACK packet is sent\nConnection Establishing\n")
