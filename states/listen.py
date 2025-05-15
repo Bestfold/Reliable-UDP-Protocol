@@ -4,8 +4,8 @@ from .state import State
 
 class ListenState(State):
 	'''
-		Serverside
-		Listening for incomming requests to communicate (SYN packets)
+		Listens for initial SYN
+
 	'''
 	def enter(self):
 		super().enter()

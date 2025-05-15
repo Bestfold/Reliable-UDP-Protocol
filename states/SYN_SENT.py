@@ -6,6 +6,10 @@ TIMEOUT = 0.4 # 400ms
 MAX_ATTEMPTS = 5
 
 class SynSentState(State):
+	'''
+		Send SYN packet
+		And await SYN-ACK 
+	'''
 	def enter(self):
 		'''
 			Send SYN packet

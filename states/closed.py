@@ -3,6 +3,18 @@ from socket import *
 from .state import State
 
 class ClosedState(State):
+	'''
+		Inital state and final state.
+
+		Initial:
+			Server goes to ListenState
+			Client goes to SynSentState
+		
+		Final
+			When connection is told to close, this state
+			closes socket and exits program
+
+	'''
 	def __init__(self, name, parent):
 		super().__init__(name, parent)
 		self.first_run = True
@@ -20,12 +32,12 @@ class ClosedState(State):
 
 
 	def exit(self):
+		# Once moving out of ClosedState, is considered "in service"
 		self.first_run = False
 
 
 	def process(self):
 		# Readability
-		net_socket = self.parent.net_socket
 		args = self.parent.args
 
 		# If server is chosen, change state to ListenState

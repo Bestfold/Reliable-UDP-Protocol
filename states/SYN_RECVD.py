@@ -6,6 +6,10 @@ TIMEOUT = 0.4 # 400ms
 MAX_ATTEMPTS = 5
 
 class SynRecvdState(State):
+	'''
+		When SYN recieved
+		Send SYN ACK and await ACK
+	'''
 	def enter(self):
 		super().enter()
 		# Address saved from SYN-packet recieved in LISTEN-State
