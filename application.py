@@ -1,7 +1,5 @@
-import sys;
-from server import *;
-from client import *;
-from socket import *;
+from socket import *
+from argumentParser import get_args
 from collections import deque;
 from statemachine import StateMachine
 from states import *
