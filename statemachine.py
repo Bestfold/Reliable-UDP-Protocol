@@ -26,6 +26,10 @@ class StateMachine:
 		# Parent variables for the states:
 		self.args = args
 		self.net_socket = net_socket
+
+		# Throughput calculated by server only
+		# Saved here for convenience
+		self.throughput = None
 		
 		# Holds the recieved address of the connection upon handshake
 		self.counterpart_address = None

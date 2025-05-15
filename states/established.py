@@ -14,6 +14,8 @@ class EstablishedState(State):
 
 		Using sliding window for flow control
 
+		Calculates throughput of data transfer
+
 		Handles:
 		- wrong address
 
@@ -34,6 +36,12 @@ class EstablishedState(State):
 			self.parent.net_socket.settimeout(CLIENT_TIMEOUT)
 
 		elif self.parent.args.server:
+			# Start time of data transfer
+			self.start_time = datetime.now()
+
+			# Coutns amount of bytes recieved
+			self.total_bytes_recieved = 0
+
 			# SERVER_TIMEOUT for client
 			self.parent.net_socket.settimeout(SERVER_TIMEOUT)
 
@@ -41,6 +49,23 @@ class EstablishedState(State):
 	def exit(self):
 		# Reset timemout
 		self.parent.net_socket.settimeout(None)
+
+		# Calculate throughput for data recieved by server
+		if self.parent.args.server:
+			# End time of data transfer
+			self.end_time = datetime.now()
+
+			# Duration of data reception in microseconds
+			duration = ((self.end_time - self.start_time).microseconds)
+
+			# Total amount of bits recieved over transfer
+			bits_recieved = self.total_bytes_recieved * 8
+
+			# bits (Mb * 10^-6) divided by microseconds (s * 10^-6) == Mb / s = Mbps
+			# Printed in LastAckState
+			self.parent.throughput = bits_recieved / duration
+
+
 
 	def process(self):
 		if self.parent.args.server:
@@ -82,7 +107,13 @@ class EstablishedState(State):
 					seq_num = get_seq_num(packet)
 					print(f"{datetime.now()} -- packet {seq_num} is received")
 
+					# Add data to self.parent.file which will be written at end of connection
+					self.parent.file += get_data(packet)
+
+					# Increase the order of sequences to keep score of which have been recieved
 					sequence_order += 1
+
+					self.total_bytes_recieved += len(packet)
 
 					ack_packet = create_packet(b'', seq_num, seq_num + 1, 4, self.parent.effective_window_size)
 

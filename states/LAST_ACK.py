@@ -10,7 +10,11 @@ class LastAckState(State):
 		super().enter()
 
 	def exit(self):
-		pass
+		# Calculated Mbps throughput with 2 desimals
+		print(f"\nThe throughput is {self.parent.throughput:.2f} Mbps")
+
+		# Write self.parent.file data to file tree
+		self.save_file()
 
 	def process(self):
 		fin_ack_packet = create_packet(b'', 0, 0, 6, 0)
@@ -18,3 +22,16 @@ class LastAckState(State):
 		print("FIN-ACK packet sent")
 		
 		return self.parent.closedState
+	
+
+	def save_file(self):
+		'''
+			Writes data on self.parent.file
+		'''
+		try:
+			file_data = self.parent.file
+			with open('recieved_data.jpg', 'wb') as new_file:
+				new_file.write(file_data)
+
+		except Exception as e:
+			print(f"Error reading file: {e}")

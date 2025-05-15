@@ -31,10 +31,11 @@ class FinWaitState(State):
 		self.parent.net_socket.sendto(fin_packet, self.parent.counterpart_address)
 		print("FIN packet is sent")
 
+
 	def exit(self):
 		# Resetting timeout
 		self.parent.net_socket.settimeout(None)
-		self.save_file()
+
 
 	def process(self):
 
@@ -87,14 +88,3 @@ class FinWaitState(State):
 			return False
 		
 
-	def save_file(self):
-		'''
-			Writes data on self.parent.file
-		'''
-		try:
-			file_data = self.parent.file
-			with open('recieved_data.jpg', 'wb') as new_file:
-				new_file.write(file_data)
-
-		except Exception as e:
-			print(f"Error reading file: {e}")

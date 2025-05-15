@@ -65,6 +65,16 @@ def get_window(packet):
 	_data, _seq_num, _ack_num, _flags, window_size = dismantle_packet(packet)
 	return window_size
 
+
+def get_data(packet):
+	'''
+		Dismatles packet and returns data in packet
+
+		Arguments: drtp packet
+	'''
+	data, _seq_num, _ack_num, _flags, _window_size = dismantle_packet(packet)
+	return data
+
 # Function sourced from https://github.com/safiqul/2410/blob/main/header/header.py
 def parse_header(header):
 	'''
