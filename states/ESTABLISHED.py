@@ -50,19 +50,18 @@ class EstablishedState(State):
 		# Calculate throughput for data recieved by server
 		if self.parent.args.server:
 
-			# Duration of data reception in microseconds
-			duration = (self.end_time.microsecond - self.start_time.microsecond)
-			
-			print("Duration: ", duration)
+			# Duration of data reception in seconds
+			duration = (self.end_time - self.start_time).total_seconds()
 
 			# Total amount of bits recieved over transfer
 			bits_recieved = self.total_bytes_recieved * 8
 
-			print("Bits recieved: ", bits_recieved)
-
-			# bits (Mb * 10^-6) divided by microseconds (s * 10^-6) == Mb / s = Mbps
+			# bits converted to Megabit by dividing by 1 million
+			# which is then divided by total seconds   (b / 1_000_000) / s = Mbps
 			# Printed in LastAckState
-			self.parent.throughput = bits_recieved / duration
+			mbps = (bits_recieved / 1_000_000) / duration
+
+			self.parent.throughput = mbps
 
 
 
