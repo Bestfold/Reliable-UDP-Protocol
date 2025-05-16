@@ -5,8 +5,9 @@
 Run with Python 3 from directory with the appropriate arguments.
 
 Example:
+
 '''python
-	python3 application.py -c -i 10.0.1.2 -p 8080 -f dancing_baby.jpg -w 10
+	python3 .\application.py -c -i 10.0.1.2 -p 8080 -f .\dancing_baby.jpg -w 10
 '''
 
 ## Arguments
