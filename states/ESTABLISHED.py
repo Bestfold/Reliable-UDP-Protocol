@@ -172,11 +172,8 @@ class EstablishedState(State):
 		print("Data transfer:\n")
 
 		while(True):
-			#print("File length: ", len(self.parent.file)) TODO
-			#print("endByte: ", self.endByte) TODO
 			# Creates and sends packets in correct order if available space in sliding window
 			self.send_available_packets(sliding_window)
-			#print("seq_num_order: ", self.seq_num_order) TODO
 			
 			# No more data to send and all sent packets acked
 			if len(self.parent.file) < self.endByte and len(sliding_window) == 0:

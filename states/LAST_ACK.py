@@ -17,6 +17,7 @@ class LastAckState(State):
 		self.save_file()
 
 	def process(self):
+		# Send FIN_ACK packet
 		fin_ack_packet = create_packet(b'', 0, 0, 6, 0)
 		self.parent.net_socket.sendto(fin_ack_packet, self.parent.counterpart_address)
 		print("FIN-ACK packet sent")

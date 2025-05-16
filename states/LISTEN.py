@@ -33,7 +33,7 @@ class ListenState(State):
 		syn_packet, client_address = self.parent.net_socket.recvfrom(1024)
 
 		# Unpack the header from the message
-		data, seq_num, ack_num, flags, window_size = dismantle_packet(syn_packet)
+		data, _seq_num, _ack_num, flags, _window_size = dismantle_packet(syn_packet)
 		
 		# Chech that SYN packet is correct
 		if flags == 8 and len(data) == 0:
