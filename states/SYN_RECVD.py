@@ -4,14 +4,28 @@ from .state import State
 
 TIMEOUT = 0.4 # 400ms
 MAX_ATTEMPTS = 5
-SERVER_WINDOW = 15 # Size of server window. Set to 15
+
 
 class SynRecvdState(State):
 	'''
-		When SYN recieved
-		Send SYN ACK and await ACK
+		Sends SYN ACK and awaits ACK before connection can be established
+
+		State transfers:
+			- ESTABLISHED when last ACK is received
+			- CLOSED for program-breaking exceptions
+		
+		Handles:
+		- TimeOut waiting for ACK-packet for MAX_ATTEMPTS timeouts
+		- Validating ACK-packet
 	'''
 	def enter(self):
+		'''
+			Called when this state becomes current_state of State Machine
+
+			Sends SYN_ACK-packet as response to SYN received in previous state
+
+			Sets timeout for reception of packets in this state
+		'''
 		super().enter()
 		# Address saved from SYN-packet recieved in LISTEN-State
 		client_address = self.parent.counterpart_address
@@ -20,22 +34,32 @@ class SynRecvdState(State):
 		self.parent.net_socket.settimeout(TIMEOUT)
 
 		# Send SYN-ACK packet to client
-		syn_ack_packet = create_packet(b'', 0, 0, 12, SERVER_WINDOW)
+		syn_ack_packet = create_packet(b'', 0, 0, 12, self.parent.effective_window_size)
 		self.parent.net_socket.sendto(syn_ack_packet, client_address)
 		print("SYN-ACK packet is sent")
 
 
 	def exit(self):
+		'''
+			Called when this state becomes current_state of State Machine
+
+			Resets timer
+		'''
 		# Reset timeout
 		self.parent.net_socket.settimeout(None)
 
 	def process(self):
 		'''
-			Await ACK packet for handshake to be complete
-			and connection established. Waiting until TIMEOUT
-			for a total of MAX_ATTEMPTS tries. 
+			The "running" function call of the state
+
+			Await ACK packet for handshake to be complete and connection established. 
+			Waiting until TIMEOUT for a total of MAX_ATTEMPTS tries. 
 			
 			If no more tries, shuts down connection throug CLOSED-state
+
+			Handles:
+			- timeout waiting for ACK
+			- valid ACK-packet (see check_ack_packet() )
 		'''
 		attempts = 0
 		ack_packet = None
@@ -84,6 +108,9 @@ class SynRecvdState(State):
 			Arguments: 
 			ack_packet -> packet to check
 			recieved_address -> address of recieved packet to check
+
+			Returns:
+			boolean: if packet is valid
 		'''
 		# If not from the right address
 		if recieved_address != self.parent.counterpart_address:

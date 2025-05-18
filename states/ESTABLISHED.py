@@ -12,12 +12,17 @@ class EstablishedState(State):
 	'''
 		Data transfer (client) and data reception (server)
 
-		Using sliding window for flow control
+		Using Go-Back-N sliding window for flow control
 
 		Calculates throughput of data transfer
 
+		State transfers:
+		- FIN_WAIT when sender has sent all data and gotten all acked.
+		- LAST_ACK when receiver receives a FIN-packet.
+		- CLOSED for program-breaking exceptions
+
 		Handles:
-		- wrong address
+		- wrong address of packet
 
 		- invalid data packet
 		- out-of-order data packet
@@ -27,6 +32,12 @@ class EstablishedState(State):
 		- out-of-order ACK packet
 	'''
 	def enter(self):
+		'''
+			Called when this state becomes current_state of State Machine
+
+			Sends the final ACK of the initial handshake (from client)
+			And sents timeout.
+		'''
 		super().enter()
 
 		# Send final ACK of handshake if client
@@ -44,6 +55,13 @@ class EstablishedState(State):
 
 
 	def exit(self):
+		'''
+			Called when this state is changed away from by State Machine
+
+			Resets timeout.
+
+			Calculates throughput from received data transfer if server
+		'''
 		# Reset timemout
 		self.parent.net_socket.settimeout(None)
 
@@ -66,6 +84,9 @@ class EstablishedState(State):
 
 
 	def process(self):
+		'''
+			The "running" function call of the state
+		'''
 		if self.parent.args.server:
 			return self.server()
 		elif self.parent.args.client:
@@ -80,6 +101,7 @@ class EstablishedState(State):
 			Exception handling:
 				- TimeoutError when waiting for data packets from client after SERVER_TIMEOUT
 				- Other exception when recieving data packets from server.
+					(see check_fin_packet() and check_data_packet() )
 
 			Testing:
 				Discards packet with sequence number equal to args.discard
@@ -149,6 +171,10 @@ class EstablishedState(State):
 
 			If RTO waiting for ACK for a packet, resending ALL packets in window.
 
+			Exception handling:
+				- TimeoutError when waiting for ACK-packets from server after CLIENT_TIMEOUT
+				- Other exception when recieving ACK-packets from server.
+					(see check_ack_packet() )
 		'''
 		# Byte pointer to where last data ended
 		self.startByte = 0
@@ -163,8 +189,6 @@ class EstablishedState(State):
 
 		# Sliding window. Using deque to allow for easy pop and append of packets
 		sliding_window = deque((), window_size)
-		
-		attempts = 0
 
 		# Is no ack recieved from server yet?
 		no_ack_recieved = True
@@ -218,17 +242,20 @@ class EstablishedState(State):
 
 
 
-	def check_fin_packet(self, data_packet, recieved_address):
+	def check_fin_packet(self, data_packet, recieved_address) -> bool:
 		'''
 			Local function to check if packet is correct FIN-packet
 			Checks for:
 			- correct address, 
-			- flags
+			- correct flags
 			- data (should be 0)
 
 			Arguments: 
-			data_packet -> packet to check
-			recieved_address -> address of recieved packet to check
+			data_packet: packet to check
+			recieved_address: address of recieved packet to check
+
+			Returns:
+			boolean: whether or not packet is valid
 		'''
 		# If not from the right address
 		if recieved_address != self.parent.counterpart_address:
@@ -242,7 +269,7 @@ class EstablishedState(State):
 			return False
 				
 
-	def check_data_packet(self, data_packet, recieved_address, sequence_order):
+	def check_data_packet(self, data_packet, recieved_address, sequence_order) -> bool:
 		'''
 			Local function to check if packet is correct data-packet
 			Checks for:
@@ -253,9 +280,12 @@ class EstablishedState(State):
 			- discards packet with seq == discard argument
 
 			Arguments: 
-			data_packet -> packet to check
-			recieved_address -> address of recieved packet to check
-			sequence_order -> sequence order of the already arrived packets
+			data_packet: packet to check
+			recieved_address: address of recieved packet to check
+			sequence_order: sequence order of the already arrived packets
+
+			Returns:
+			boolean: whether or not packet is valid
 		'''
 
 		# If not from the right address
@@ -287,6 +317,12 @@ class EstablishedState(State):
 
 
 	def send_available_packets(self, sliding_window):
+		'''
+			Checks if space in sliding window, and sends packets to fill up slidng window space.
+
+			Argument:
+			sliding_window: sliding window to check for space and fill
+		'''
 		# Sending packets when space in window and still more data not sent in packets.
 		while(len(sliding_window) < sliding_window.maxlen and len(self.parent.file) >= self.endByte): #TODO might be > and not >=
 

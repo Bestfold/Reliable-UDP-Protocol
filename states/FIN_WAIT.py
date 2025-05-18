@@ -14,12 +14,22 @@ class FinWaitState(State):
 
 		Will wait MAX_ATTEMPTS amount of times before shutting down
 
+		State transfers:
+		- CLOSED when FIN_ACK-packet is received
+
 		Handles:
 		- Wrong address
 		- Invalid FIN-ACK packet
 		- No FIN-ACK response
 	'''
 	def enter(self):
+		'''
+			Called when this state becomes current_state of State Machine
+
+			Sends a FIN-packet to signal receiver, and for receiver to respond to.
+
+			Also sets timeout for waiting
+		'''
 		super().enter()
 
 		print("\n\nConnection Teardown:\n")
@@ -34,12 +44,29 @@ class FinWaitState(State):
 
 
 	def exit(self):
+		'''
+			Called when this state is changed away from by State Machine
+
+			Resets timeout
+		'''
 		# Resetting timeout
 		self.parent.net_socket.settimeout(None)
 
 
 	def process(self):
+		'''
+			The "running" function call of the state
 
+			Await FIN_ACK-packet from receiver and signal changing state to CLOSED
+			
+			Handles:
+			- No FIN-ACK response for MAX_ATTEMPTS timeouts
+
+			 (check_fin_ack_packet):
+			- Wrong address of FIN-ACK packet 
+			- Invalid FIN-ACK packet
+			
+		'''
 		attempts = 0
 
 		# Await FIN_ACK packet
@@ -75,6 +102,20 @@ class FinWaitState(State):
 		
 
 	def check_fin_ack_packet(self, fin_ack_packet, recieved_address) -> bool:
+		'''
+			Validate FIN_ACK-packet
+
+			Arguments
+			fin_ack_packet: packet to validate
+			received_address: sender-address of packet received
+
+			Returns
+			boolean: Wether or not packet is valid.
+
+			Handles:
+			- Wrong address of FIN-ACK packet
+			- Invalid FIN-ACK packet
+		'''
 		data, _seq_num, _ack_num, flags, _window_size = dismantle_packet(fin_ack_packet)
 		
 		if recieved_address != self.parent.counterpart_address:

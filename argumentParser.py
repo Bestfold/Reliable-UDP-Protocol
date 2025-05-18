@@ -4,6 +4,11 @@ import re
 
 
 def get_args():
+	'''
+		Parses all arguments and validates them
+
+		All argumetns are put into args-variable in scope of application
+	'''
 	try:
 		parser = argparse.ArgumentParser(description='Reliable Transport Protocol on top of UDP')
 
