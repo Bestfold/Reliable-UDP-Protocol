@@ -11,7 +11,6 @@ struct StateMachine {
 	//file = b''
 
 	//let current_state = 
-
 }
 
 impl {
